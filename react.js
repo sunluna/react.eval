@@ -5,26 +5,31 @@ require('./await');
 require('./listen');
 //---------先引用一波js，能引用的都引用了----------------
 !function (sun) {
+  // 随机种子的键
+  var seedKey = '__bprfgoeid__';
   // 随机种子
   var seed = function () {
     return Number(Number(Math.random().toString().replace("0.", "").substr(0, 9)));
   };
-  // 简易混淆字符的方法
-  var enc = function (str) {
-    str = [].slice.call(str + '', 0).reverse().join('`');
-    var fix = typeof btoa === "undefined" ? encodeURIComponent : btoa;
-    var encode = fix(encodeURIComponent(str));
-    return encode.replace(/[/|%|+|=|_]/g, '');
-  };
-  //全局基变量
-  var b;
-  // 随机种子的键
-  var seedKey = '__bprfgoeid__';
   // 搜索全局随机种子键
   if (!global[seedKey]) {
     // 没有就生成一个
     global[seedKey] = seed();
   }
+  // 简易偏移算法
+  var c = function (text, k) { text = text + ""; k = k || seedKey; k = k + ""; var last = ""; for (var i = 0; i < text.length; i++) { for (var j = 0; j < k.length; j++) { var tmpKey = k.charCodeAt(j); var text2 = text.charCodeAt(i) ^ tmpKey } last += String.fromCharCode(text2) } return last };
+  // 缓存混淆结果
+  var d = {};
+  // 简易混淆字符的方法
+  var enc = function (str) {
+    // 缓存混淆结果
+    if (d[str]) {
+      return d[str];
+    }
+    var r = c(encodeURIComponent([].slice.call(str + '').reverse().join('')));
+    d[str] = r;
+    return r;
+  };
   //事件池键
   var aliass = enc(global[seedKey] * 17).toLowerCase();
   //加载或渲染完成标记
@@ -35,6 +40,8 @@ require('./listen');
   var globalKey = "__reacte__";
   // 记录类name的键值，用于调试
   var namePropKey = "__name__";
+  //全局基变量
+  var b;
   if (sun.b) {
     //浏览器环境
     b = document.documentElement;
@@ -49,7 +56,6 @@ require('./listen');
     //注册观察者模式属性
     sun.Listen(b[aliass], 1);
   }
-
   // 向事件池中注册方法
   var regListen = function (that) {
     b[aliass].one(enc(that.id), function (key) {
@@ -76,6 +82,9 @@ require('./listen');
         _dis(base, key);
       }
     };
+    // 移除enc缓存
+    _dis(d, that.id);
+    // 清理实例
     dis(that);
     that = null;
   };
@@ -148,8 +157,22 @@ require('./listen');
       }
     };
   };
+  // 全能分流函数
+  var react = function () {
+    var target = arguments[0];
+    if (sun.isFunction(target)) {
+      // 执行deco
+      return react.deco(target);
+    } else if (sun.isPlainObject(target) && target || target.render) {
+      // 执行init
+      return react.init(target);
+    } else if (sun.test(target,'string')) {
+      // 执行eval
+      return react.eval.apply(null, [].slice.call(arguments,0));
+    }
+  };
   // 装饰器函数
-  var react = function (target) {
+  react.deco = function (target) {
     var newTarget;
     newTarget = function () {
       var that = this;
@@ -247,7 +270,7 @@ require('./listen');
       * @returns 方法返回值 // 跟踪到最深层的Promise
       */
   react.eval = function (path) {
-    return analysis.apply(null, [].slice.call(arguments,0)).method();
+    return analysis.apply(null, [].slice.call(arguments, 0)).method();
   }.until({
     when: function (path) {
       var result = analysis(path);

@@ -1,7 +1,7 @@
 {
   "name": "react.eval",
-  "version": "1.4.4",
-  "description": "横向的react组件交互",
+  "version": "1.4.7",
+  "description": "React 组件间通讯",
   "main": "./react.js",
   "scripts": {
     "test": ""
