@@ -6,8 +6,8 @@ sun.fn = sun.prototype = {
     return this;
   }
 };
-//版本号1
-sun.version = "1.6.3";
+//版本号
+sun.version = "1.6.4";
 //合并原型
 sun.fn.init.prototype = sun.fn;
 //识别window

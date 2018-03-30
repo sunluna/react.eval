@@ -67,21 +67,23 @@ require('./listen');
       }
     });
   };
+  // 删除属性
+  var _dis = function (base, key) {
+    try {
+      delete base[key];
+    } catch (e) {
+      base[key] = undefined;
+    }
+  }
+  // 清空对象
+  var dis = function (base) {
+    for (var key in base) {
+      _dis(base, key);
+    }
+  };
   // 清除事件注册
   var removeListen = function (that) {
     b[aliass].remove(enc(that.id));
-    var _dis = function (base, key) {
-      try {
-        delete base[key];
-      } catch (e) {
-        base[key] = undefined;
-      }
-    }
-    var dis = function (base) {
-      for (var key in base) {
-        _dis(base, key);
-      }
-    };
     // 移除enc缓存
     _dis(d, that.id);
     // 清理实例
@@ -166,9 +168,9 @@ require('./listen');
     } else if (sun.isPlainObject(target) && target || target.render) {
       // 执行init
       return react.init(target);
-    } else if (sun.test(target,'string')) {
+    } else if (sun.test(target, 'string')) {
       // 执行eval
-      return react.eval.apply(null, [].slice.call(arguments,0));
+      return react.eval.apply(null, [].slice.call(arguments, 0));
     }
   };
   // 装饰器函数
@@ -264,23 +266,55 @@ require('./listen');
     regListen(that);
     that[inited] = 1;
   };
+  // 防止某些组件正处于不可修改状态的时候被调用方法
+  var _check = function (path) {
+    var result = analysis(path);
+    result.method = null;
+    return result.done;
+  };
+  // 执行控件方法
+  var _do = function (path) {
+    return analysis.apply(null, [].slice.call(arguments, 0)).method();
+  };
+  // 内部执行的方法
+  var _eval = _do.until({
+    when: _check,//35毫秒检查一次
+    retry: 35,
+    //最多等待3秒
+    timeout: 3000
+  }).await();
   /**
       * 执行指定控件的方法  react.eval("id.test",参数1，参数2,...)
       * @param path String id.方法名
       * @returns 方法返回值 // 跟踪到最深层的Promise
       */
   react.eval = function (path) {
-    return analysis.apply(null, [].slice.call(arguments, 0)).method();
-  }.until({
-    when: function (path) {
-      var result = analysis(path);
-      result.method = null;
-      return result.done;
-    },//35毫秒检查一次
-    retry: 35,
-    //最多等待3秒
-    timeout: 3000
-  }).await();
+    var timeout = 0;
+    var that = this;
+    var args = [].slice.call(arguments, 0);
+    var p = new Promise(function (y, n) {
+      timeout = setTimeout(function () {
+        // 按照原来的方法调用
+        _eval.apply(that, args).then(y, n);
+      }, 0);
+    });
+    // 某些方法并不会修改状态，而是为了获取数据，使用此方法可以立刻执行控件对应方法
+    var tmp = function () {
+      // 清除延时，防止重复执行
+      clearTimeout(timeout);
+      if (_check(path)) {
+        // 如果可以被立刻调用，则直接返回结果
+        return _do.apply(that, args);
+      } else {
+        throw new Error('access denied');
+      }
+    };
+    // 伪造相关属性
+    tmp.then = function (x, y) { return p.then(x, y); };
+    tmp.catch = function (x) { return p.catch(x); };
+    // 返回伪装
+    return tmp;
+  };
   sun.react = react;
 }(sun);
 //--------注册全局--------------------- 
