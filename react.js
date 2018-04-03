@@ -119,7 +119,7 @@ require('./listen');
     that.state = that.state || {};
     for (var key in props) {
       if (key in that) {
-        if (typeof that[key] == "function") {
+        if (sun.isFunction(that[key])) {
           //如果是实例属性中的函数
           thatObj[key] = props[key].bind(that);
         } else {

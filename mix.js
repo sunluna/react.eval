@@ -121,7 +121,7 @@ var sun = require("./is");
         if ((srcType == "object") && endFlag === false) {//5
             for (var i in src) {
                 //越过有坑的属性,可以动态改变
-                if (sun.mix.skipKeys.indexOf(i) != -1)
+                if (sun.mix.skipKeys.indexOf(i) !== -1)
                     continue
                 var targetSrc = src[i];
                 try {
@@ -140,6 +140,6 @@ var sun = require("./is");
         return des;
     };
     //需要跳过的属性
-    sun.mix.skipKeys =  ["__proxy__", "__data__", "__const__", "$accessors", "$vbsetter", "$vbthis"];
+    sun.mix.skipKeys =  [];
 })(sun);
 module.exports=sun;
