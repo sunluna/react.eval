@@ -10,7 +10,7 @@ require('./listen');
   // 命令行输出
   var cmd = typeof console == 'undefined' ? { error: defM, log: defM } : console;
   // 随机种子的键
-  var seedKey = '__bpxfgoeid__';
+  var seedKey = '__kfgoid__';
   // 随机种子
   var seed = function () {
     return Number(Number(Math.random().toString().replace("0.", "").substr(0, 9)));
@@ -21,7 +21,20 @@ require('./listen');
     global[seedKey] = seed();
   }
   // 简易偏移算法
-  var c = function (text, k) { text = text + ""; k = k || seedKey; k = k + ""; var last = ""; for (var i = 0; i < text.length; i++) { for (var j = 0; j < k.length; j++) { var tmpKey = k.charCodeAt(j); var text2 = text.charCodeAt(i) ^ tmpKey } last += String.fromCharCode(text2) } return last };
+  var c = function (text, k) {
+    text = text + "";
+    k = k || (seedKey + sun.version + global[seedKey]);
+    k = k + "";
+    var last = "";
+    for (var i = 0; i < text.length; i++) {
+      for (var j = 0; j < k.length; j++) {
+        var tmpKey = k.charCodeAt(j);
+        var text2 = text.charCodeAt(i) ^ tmpKey;
+      }
+      last += String.fromCharCode(text2);
+    }
+    return last;
+  };
   // 缓存混淆结果
   var d = {};
   // 简易混淆字符的方法
@@ -141,7 +154,7 @@ require('./listen');
     //合并属性到实例,如果既不在实例中声明，也没有在state中声明，那就留在props里面好了
     sun.mix([1], that, thatObj);
   };
-  
+
   var defMethod = function () {
     return {
       componentDidMount: function () {
@@ -154,6 +167,10 @@ require('./listen');
         //复制最新属性到实例
         clearM(this, nextProps);
         return true;
+      },
+      forceUpdate: function () {
+        // 屏蔽外部调用
+        this[done] = 0;
       },
       componentDidUpdate: function (prevProps, prevState, prevContext) {
         //完成控件更新后允许进行外部方法操作
