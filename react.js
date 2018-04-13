@@ -5,8 +5,12 @@ require('./await');
 require('./listen');
 //---------先引用一波js，能引用的都引用了----------------
 !function (sun) {
+  //默认的空方法
+  var defM = function () { };
+  // 命令行输出
+  var cmd = typeof console == 'undefined' ? { error: defM, log: defM } : console;
   // 随机种子的键
-  var seedKey = '__bprfgoeid__';
+  var seedKey = '__bpxfgoeid__';
   // 随机种子
   var seed = function () {
     return Number(Number(Math.random().toString().replace("0.", "").substr(0, 9)));
@@ -59,6 +63,9 @@ require('./listen');
   // 向事件池中注册方法
   var regListen = function (that) {
     b[aliass].one(enc(that.id), function (key) {
+      if (key == undefined) {
+        return that;
+      }
       var args = [].slice.call(arguments, 1);
       if (sun.isFunction(that[key])) {
         return that[key].apply(that, args);
@@ -92,9 +99,9 @@ require('./listen');
   };
   // 检查执行方法
   var analysis = function (path) {
-    //path=id.方法名
+    path = path || "";
     var result = { done: false, method: defM };
-    var ary = (path || ".").split('.');
+    var ary = path.split('.');
     var id = ary[0];
     var encid = enc(id);
     // 检查 是否加载完成
@@ -134,8 +141,7 @@ require('./listen');
     //合并属性到实例,如果既不在实例中声明，也没有在state中声明，那就留在props里面好了
     sun.mix([1], that, thatObj);
   };
-  //默认的空方法
-  const defM = function () { };
+  
   var defMethod = function () {
     return {
       componentDidMount: function () {
@@ -169,8 +175,14 @@ require('./listen');
       // 执行init
       return react.init(target);
     } else if (sun.test(target, 'string')) {
-      // 执行eval
-      return react.eval.apply(null, [].slice.call(arguments, 0));
+      target = target || "";
+      if (target.indexOf('.') != -1) {
+        // 执行eval
+        return react.eval.apply(null, [].slice.call(arguments, 0));
+      } else {
+        // 直接获取实例
+        return react.get(target);
+      }
     }
   };
   // 装饰器函数
@@ -199,12 +211,61 @@ require('./listen');
     return newTarget;
   };
   /**
+   * 初始化方法（渲染默认生命周期）
+   * @param {any} that
+   * @param {any} key
+   * @param {any} def
+   */
+  var _init = function (that, key, def) {
+    var org = that[key];
+    if (that[key] && that[key].__orgMethod) {
+      //如果是已经注册过的方法
+      org = that[key].__orgMethod;
+    }
+    var newMethod = function () {
+      var args = [].slice.call(arguments, 0);
+      //自定义方法执行
+      var newFunc = function () {
+        if (!org) {
+          //如果没有自定义方法
+          return undefined;
+        }
+        return org.apply(that, args);
+      };
+      //默认方法执行
+      var defFunc = function () {
+        return def[key].apply(that, args);
+      };
+      //声明结果
+      var defResult, newResult;
+      if (key === "componentWillUnmount") {
+        //组件卸载的默认方法放在最后执行，防止因为变量属性删除导致自定义方法无法访问实例
+        newResult = newFunc();
+        defResult = defFunc();
+      } else {
+        //其他场景先执行默认方法，后执行自定义方法
+        defResult = defFunc();
+        newResult = newFunc();
+      }
+      newResult = (newResult === undefined) ? defResult : newResult;
+      if (newResult === false && key == "shouldComponentUpdate") {
+        //如果不允许刷新，则标记为完成
+        that[done] = 1;
+      }
+      return newResult;
+    };
+    //记录原始方法
+    newMethod.__orgMethod = org;
+    //覆盖到实例中
+    that[key] = newMethod;
+  };
+  /**
      * 注册控件实例 react.init(this)
      * @param that 控件实例
      */
   react.init = function (that) {
     if (that[inited]) {
-      throw new Error(that.id + ':inited');
+      cmd.error(that.id + ':inited');
       return;
     }
     var props = that.props || {};
@@ -218,49 +279,7 @@ require('./listen');
     that[namePropKey] = that.constructor.name;
     //注册方法
     for (var key in def) {
-      (function (that, key, def) {
-        var org = that[key];
-        if (that[key] && that[key].__orgMethod) {
-          //如果是已经注册过的方法
-          org = that[key].__orgMethod;
-        }
-        var newMethod = function () {
-          var args = [].slice.call(arguments, 0);
-          //自定义方法执行
-          var newFunc = function () {
-            if (!org) {
-              //如果没有自定义方法
-              return undefined;
-            }
-            return org.apply(that, args);
-          };
-          //默认方法执行
-          var defFunc = function () {
-            return def[key].apply(that, args);
-          };
-          //声明结果
-          var defResult, newResult;
-          if (key === "componentWillUnmount") {
-            //组件卸载的默认方法放在最后执行，防止因为变量属性删除导致自定义方法无法访问实例
-            newResult = newFunc();
-            defResult = defFunc();
-          } else {
-            //其他场景先执行默认方法，后执行自定义方法
-            defResult = defFunc();
-            newResult = newFunc();
-          }
-          newResult = (newResult === undefined) ? defResult : newResult;
-          if (newResult === false && key == "shouldComponentUpdate") {
-            //如果不允许刷新，则标记为完成
-            that[done] = 1;
-          }
-          return newResult;
-        };
-        //记录原始方法
-        newMethod.__orgMethod = org;
-        //覆盖到实例中
-        that[key] = newMethod;
-      })(that, key, def);
+      _init(that, key, def);
     }
     // 注册事件监听
     regListen(that);
@@ -269,7 +288,7 @@ require('./listen');
   // 防止某些组件正处于不可修改状态的时候被调用方法
   var _check = function (path) {
     var result = analysis(path);
-    result.method = null;
+    result.method = defM;
     return result.done;
   };
   // 执行控件方法
@@ -306,7 +325,7 @@ require('./listen');
         // 如果可以被立刻调用，则直接返回结果
         return _do.apply(that, args);
       } else {
-        throw new Error('access denied');
+        cmd.error(path + ' access denied');
       }
     };
     // 伪造相关属性
@@ -314,6 +333,10 @@ require('./listen');
     tmp.catch = function (x) { return p.catch(x); };
     // 返回伪装
     return tmp;
+  };
+  // 直接根据id获取某组件的实例（无延迟）
+  react.get = function (id) {
+    return react.eval(id)();
   };
   sun.react = react;
 }(sun);
