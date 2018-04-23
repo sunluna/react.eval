@@ -12,7 +12,7 @@ React 组件间通讯
 github:
 <a href="https://github.com/sunluna/react.eval">https://github.com/sunluna/react.eval</a>
 <br/>
-快速开始:
+Getting Started(快速开始):
 <a href="https://github.com/sunluna/react.eval.book">https://github.com/sunluna/react.eval.book</a><br/>
 gitbook:
 <a href="https://spencerlunafrade.gitbooks.io/react-eval">https://spencerlunafrade.gitbooks.io/react-eval</a>
