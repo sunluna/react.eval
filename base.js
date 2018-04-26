@@ -7,7 +7,7 @@ sun.fn = sun.prototype = {
   }
 };
 //版本号
-sun.version = "1.6.6";
+sun.version = "1.6.8-alpha0";
 //合并原型
 sun.fn.init.prototype = sun.fn;
 //识别window
