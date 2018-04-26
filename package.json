@@ -1,6 +1,6 @@
 {
   "name": "react.eval",
-  "version": "1.4.10",
+  "version": "1.4.11-alpha0",
   "description": "React 组件间通讯",
   "main": "./react.js",
   "scripts": {
