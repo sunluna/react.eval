@@ -16,7 +16,7 @@ module.exports = {
               loader: 'babel-loader',
               query: {
                   presets: ["es2015-loose"],
-                  "plugins": ["transform-remove-strict-mode"]
+                  //"plugins": ["transform-remove-strict-mode"]
               }
           },
           { test: /\.css$/, loader: 'css-loader' }

@@ -2,51 +2,81 @@ var sun = require("./base");
 (function (sun) {
     //观察者模式
     sun.listen = function (__this) {
-        var on, log, obj, one, remove, fire;
-        obj = {};
-        __this = __this || this;
-        //注册监听事件
-        on = function (key, eventfn) {
-            var stack, _ref;  //stack是盒子
-            stack = (_ref = obj[key]) != null ? _ref : obj[key] = [];
-            return stack.push(eventfn);
-        };
-        //注册唯一监听事件
-        one = function (key, eventfn) {
-            remove(key);
-            return on(key, eventfn);
-        };
-        //清除指定的所有事件
-        remove = function (key) {
-          var _ref= obj[key];
-          (_ref) != null ? _ref.length = 0 : void 0;
-          try {
-            delete obj[key];
-          } catch (e) {
-            obj[key] = undefined;
+      var listener;
+      listener = {
+        // 事件池
+        pool: {},
+        // 初始化
+        _init: function (key) {
+          if (!sun.isArray(listener.pool[key])) {
+            listener.pool[key] = [];
           }
-        };
-        //触发事件
-        fire = function () {
-            var fn, stack, _i, _len, _ref, key, args;
-            args = [].slice.call(arguments, 0)
-            key = args.shift();
-            stack = (_ref = obj[key]) != null ? _ref : obj[key] = [];
+          return listener.pool[key];
+        },
+        // 注册监听
+        on: function (key, func) {
+          listener._init(key).push(func);
+        },
+        // 删除指定名称的监听池
+        remove: function (key) {
+          try {
+            delete listener.pool[key];
+          } catch (e) {
+            listener.pool[key] = undefined;
+          }
+        },
+        // 注册单一监听方法
+        one: function (key, func) {
+          listener.remove(key);
+          listener.on(key, func);
+        },
+        // 注册单次监听器，方法使用一次就移出队列
+        once: function (key, func) {
+          var newFunc = function () {
+            var that = this;
+            var args = [].slice.call(arguments, 0);
             var result;
-            for (_i = 0, _len = stack.length; _i < _len; _i++) {
-                fn = stack[_i];
-                result = fn.apply(__this, args);
+            try {
+              result = func.apply(that, args);
+            } catch (e) {
+              //
             }
-            // 返回值为事件列表的最后一个结果
+            var events = listener._init(key);
+            var index = events.indexOf(newFunc);
+            if (index !== -1) {
+              // 删除事件方法
+              events.splice(index, 1);
+            }
             return result;
-        };
-        //返回可执行的相关方法
-        return {
-            on: on,
-            one: one,
-            remove: remove,
-            fire: fire
-        };
+          };
+          listener.on(key, newFunc);
+        },
+        // 触发监听事件 function写法才能获取arguments
+        fire: function (key) {
+          var that = __this;// 这里要越过第一个参数
+          var args = [].slice.call(arguments, 1);
+          var result;
+          var events = listener._init(key);
+          for (var i = 0; i < events.length; i++) {
+            var x = events[i];
+            if (x) {
+              try { // 返回结果等于队列最后一个成功执行的方法返回值
+                result = x.apply(that, args);
+              } catch (e) {
+                //
+              }
+            }
+          }
+          return result;
+        }
+      };
+      return {
+        on: listener.on,
+        one: listener.one,
+        once: listener.once,
+        fire: listener.fire,
+        remove: listener.remove
+      };
     };
     //对指定的控制变量追加观察者模式的方法
     sun.Listen =function (that, full) {

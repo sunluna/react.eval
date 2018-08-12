@@ -1,6 +1,6 @@
 {
   "name": "react.eval",
-  "version": "1.4.11-alpha0",
+  "version": "1.4.14",
   "description": "React 组件间通讯",
   "main": "./react.js",
   "scripts": {
@@ -21,6 +21,7 @@
     "babel-loader": "^7.1.1",
     "babel-polyfill": "^6.23.0",
     "babel-preset-es2015-loose": "^8.0.0",
-    "npm": "^5.8.0"
+    "npm": "^5.8.0",
+    "webpack": "^2.2.0"
   }
 }

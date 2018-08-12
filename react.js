@@ -12,18 +12,20 @@ require('./listen');
   // 随机种子的键
   var seedKey = '__kfgoid__';
   // 随机种子
-  var seed = function () {
+  var seeds = function () {
     return Number(Number(Math.random().toString().replace("0.", "").substr(0, 9)));
   };
+  // 当前种子
+  var seed;
   // 搜索全局随机种子键
   if (!global[seedKey]) {
     // 没有就生成一个
-    global[seedKey] = seed();
+    seed = global[seedKey] = seeds();
   }
   // 简易偏移算法
   var c = function (text, k) {
     text = text + "";
-    k = k || (seedKey + sun.version + global[seedKey]);
+    k = k || (seedKey + sun.version + seed);
     k = k + "";
     var last = "";
     for (var i = 0; i < text.length; i++) {
@@ -39,6 +41,10 @@ require('./listen');
   var d = {};
   // 简易混淆字符的方法
   var enc = function (str) {
+    if (react.isChunk) {
+      // 如果已经被单独提取则不加密
+      return str;
+    }
     // 缓存混淆结果
     if (d[str]) {
       return d[str];
@@ -48,7 +54,7 @@ require('./listen');
     return r;
   };
   //事件池键
-  var aliass = enc(global[seedKey] * 17).toLowerCase();
+  var aliass = enc(seed * 17).toLowerCase();
   //加载或渲染完成标记
   var done = "__done__";
   // 注册完成标记
@@ -57,6 +63,8 @@ require('./listen');
   var globalKey = "__reacte__";
   // 记录类name的键值，用于调试
   var namePropKey = "__name__";
+  // 全局的实例池
+  var pool = {};
   //全局基变量
   var b;
   if (sun.b) {
@@ -74,19 +82,10 @@ require('./listen');
     sun.Listen(b[aliass], 1);
   }
   // 向事件池中注册方法
-  var regListen = function (that) {
-    b[aliass].one(enc(that.id), function (key) {
-      if (key == undefined) {
-        return that;
-      }
-      var args = [].slice.call(arguments, 1);
-      if (sun.isFunction(that[key])) {
-        return that[key].apply(that, args);
-      } else {
-        return that[key];
-      }
-    });
-  };
+  b[aliass].on('init', function (that) {
+    var key = enc(that.id);
+    pool[key] = that;
+  });
   // 删除属性
   var _dis = function (base, key) {
     try {
@@ -102,14 +101,16 @@ require('./listen');
     }
   };
   // 清除事件注册
-  var removeListen = function (that) {
-    b[aliass].remove(enc(that.id));
+  b[aliass].on('dispose', function (that) {
+    var key = enc(that.id);
+    // 移除实例
+    _dis(pool, key);
     // 移除enc缓存
     _dis(d, that.id);
     // 清理实例
     dis(that);
     that = null;
-  };
+  });
   // 检查执行方法
   var analysis = function (path) {
     path = path || "";
@@ -118,14 +119,14 @@ require('./listen');
     var id = ary[0];
     var encid = enc(id);
     // 检查 是否加载完成
-    var check = b[aliass].fire(encid, done);
+    var check = pool[encid] && pool[encid][done];
     if (check) {
       //如果检查通过
       result.done = true;
       var key = ary[1];
       var args = [].slice.call(arguments, 1);
       result.method = function () {
-        return b[aliass].fire.apply(null, [encid, key].concat(args));
+        return pool[encid][key].apply(pool[encid], args);
       };
     }
     return result;
@@ -178,12 +179,12 @@ require('./listen');
       },
       componentWillUnmount: function () {
         // 移除事件
-        removeListen(this);
+        b[aliass].fire('dispose', this);
       }
     };
   };
   // 全能分流函数
-  var react = function () {
+  function react() {
     var target = arguments[0];
     if (sun.isFunction(target)) {
       // 执行deco
@@ -290,7 +291,7 @@ require('./listen');
     //覆盖属性中的方法到实例
     clearM(that, props);
     //如果没有id就生成一个 //2018-03-23 如果内部自己指定了一个id，就需要使用指定的id，不再生成随机字符串
-    that.id = that.id || props.id || (seed());
+    that.id = that.id || props.id || (seeds());
     //标记禁止外部函数操作
     that[done] = 0;
     that[namePropKey] = that.constructor.name;
@@ -299,7 +300,7 @@ require('./listen');
       _init(that, key, def);
     }
     // 注册事件监听
-    regListen(that);
+    b[aliass].fire('init',that);
     that[inited] = 1;
   };
   // 防止某些组件正处于不可修改状态的时候被调用方法
@@ -353,9 +354,44 @@ require('./listen');
   };
   // 直接根据id获取某组件的实例（无延迟）
   react.get = function (id) {
-    return react.eval(id)();
+    return pool[enc(id)];
   };
-  sun.react = react;
+  /*
+  react.eval 默认把事件池注册到公共变量中，这是因为某些项目是按需加载，并且react.eval不在chunk配置中
+  如果react.eval被配置了chunk，只会被加载一次，此时把事件池放到局部变量里就可以了
+  也可以用此方法转移react.eval事件池位置
+  */
+  react.chunk = function (newBase) {
+    newBase = newBase || {};
+    var p = b[aliass];
+    // 删除全局事件池
+    _dis(b, aliass);
+    // 删除全局随机种子
+    _dis(global, seedKey);
+    if (!(aliass in newBase)) {
+      // 已经存在的情况下只改变引用
+      newBase[aliass] = p;
+    }
+    b = newBase;
+    // 标记被单独提取
+    react.isChunk = 1;
+    return react;
+  };
+  // 判别是否已经提取过
+  react.isChunk = 0;
+  // 占用ref和react两个别名
+  sun.ref = sun.react = react;
+  // 代理引用，如果支持Proxy
+  var refs;
+  if (typeof Proxy === 'function') {
+    refs = new Proxy({}, {
+      get: function (obj, key) {
+        return react.get(key);
+      }
+    });
+    // 注册引用实例的代理，占用refs别名
+    sun.refs = refs;
+  }
 }(sun);
 //--------注册全局--------------------- 
 module.exports = sun;

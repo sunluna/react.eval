@@ -1,5 +1,7 @@
 //基本声明
-var sun = function (param) { return new sun.fn.init(param); };
+var sun = function (param) {
+  return new sun.fn.init(param);
+};
 sun.fn = sun.prototype = {
   //初始化函数
   init: function (param) {
@@ -7,7 +9,7 @@ sun.fn = sun.prototype = {
   }
 };
 //版本号
-sun.version = "1.6.8-alpha0";
+sun.version = "1.6.8";
 //合并原型
 sun.fn.init.prototype = sun.fn;
 //识别window
