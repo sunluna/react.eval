@@ -37,7 +37,7 @@ sun.until = function (func, when, retry, max, timeout) {
             fixFunc.clear();
             //内部循环执行的函数
             var innerFunc = function () {
-                var check = (typeof param.when == "boolean") ? param.when : param.when.apply(that, args);
+              var check = (sun.test(param.when,"boolean")) ? param.when : param.when.apply(that, args);
                 try {
                     if (check) {
                         //这里不允许调整次数增加和代码执行的上下顺序,在代码执行前即加一次代码执行次数屏蔽后续的代码执行

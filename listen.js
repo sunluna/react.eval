@@ -75,7 +75,9 @@ var sun = require("./base");
         one: listener.one,
         once: listener.once,
         fire: listener.fire,
-        remove: listener.remove
+        remove: listener.remove,
+        emit: listener.fire,
+        off: listener.remove,
       };
     };
     //对指定的控制变量追加观察者模式的方法
@@ -88,8 +90,8 @@ var sun = require("./base");
             }
         } else {
             //简单模式下只附加最关键的方法到控制变量
-            that.on = result.on;
-            that.fire = result.fire;
+          that.on = result.on;
+          that.fire = that.emit = result.fire;
         }
         return that;
     };

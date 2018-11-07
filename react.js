@@ -10,7 +10,7 @@ require('./listen');
   // 命令行输出
   var cmd = typeof console == 'undefined' ? { error: defM, log: defM } : console;
   // 随机种子的键
-  var seedKey = '__kfgoid__';
+  var seedKey = '__emfgpid__';
   // 随机种子
   var seeds = function () {
     return Number(Number(Math.random().toString().replace("0.", "").substr(0, 9)));
@@ -37,20 +37,13 @@ require('./listen');
     }
     return last;
   };
-  // 缓存混淆结果
-  var d = {};
   // 简易混淆字符的方法
   var enc = function (str) {
     if (react.isChunk) {
       // 如果已经被单独提取则不加密
       return str;
     }
-    // 缓存混淆结果
-    if (d[str]) {
-      return d[str];
-    }
     var r = c(encodeURIComponent([].slice.call(str + '').reverse().join('')));
-    d[str] = r;
     return r;
   };
   //事件池键
@@ -63,6 +56,10 @@ require('./listen');
   var globalKey = "__reacte__";
   // 记录类name的键值，用于调试
   var namePropKey = "__name__";
+  // 初始化方法的键值
+  var initEventKey = c('__init__',17);
+  // 释放资源方法的键值
+  var disposeEventKey = c('__dispose__',17);
   // 全局的实例池
   var pool = {};
   //全局基变量
@@ -82,9 +79,8 @@ require('./listen');
     sun.Listen(b[aliass], 1);
   }
   // 向事件池中注册方法
-  b[aliass].on('init', function (that) {
-    var key = enc(that.id);
-    pool[key] = that;
+  b[aliass].on(initEventKey, function (that) {
+    pool[that.id] = that;
   });
   // 删除属性
   var _dis = function (base, key) {
@@ -94,22 +90,10 @@ require('./listen');
       base[key] = undefined;
     }
   }
-  // 清空对象
-  var dis = function (base) {
-    for (var key in base) {
-      _dis(base, key);
-    }
-  };
   // 清除事件注册
-  b[aliass].on('dispose', function (that) {
-    var key = enc(that.id);
+  b[aliass].on(disposeEventKey, function (that) {
     // 移除实例
-    _dis(pool, key);
-    // 移除enc缓存
-    _dis(d, that.id);
-    // 清理实例
-    dis(that);
-    that = null;
+    _dis(pool, that.id);
   });
   // 检查执行方法
   var analysis = function (path) {
@@ -117,16 +101,15 @@ require('./listen');
     var result = { done: false, method: defM };
     var ary = path.split('.');
     var id = ary[0];
-    var encid = enc(id);
     // 检查 是否加载完成
-    var check = pool[encid] && pool[encid][done];
+    var check = pool[id] && pool[id][done];
     if (check) {
       //如果检查通过
       result.done = true;
       var key = ary[1];
       var args = [].slice.call(arguments, 1);
       result.method = function () {
-        return pool[encid][key].apply(pool[encid], args);
+        return pool[id][key].apply(pool[id], args);
       };
     }
     return result;
@@ -179,7 +162,7 @@ require('./listen');
       },
       componentWillUnmount: function () {
         // 移除事件
-        b[aliass].fire('dispose', this);
+        b[aliass].fire(disposeEventKey, this);
       }
     };
   };
@@ -300,7 +283,7 @@ require('./listen');
       _init(that, key, def);
     }
     // 注册事件监听
-    b[aliass].fire('init',that);
+    b[aliass].fire(initEventKey, that);
     that[inited] = 1;
   };
   // 防止某些组件正处于不可修改状态的时候被调用方法
@@ -354,7 +337,7 @@ require('./listen');
   };
   // 直接根据id获取某组件的实例（无延迟）
   react.get = function (id) {
-    return pool[enc(id)];
+    return pool[id];
   };
   /*
   react.eval 默认把事件池注册到公共变量中，这是因为某些项目是按需加载，并且react.eval不在chunk配置中
@@ -381,17 +364,10 @@ require('./listen');
   react.isChunk = 0;
   // 占用ref和react两个别名
   sun.ref = sun.react = react;
-  // 代理引用，如果支持Proxy
-  var refs;
-  if (typeof Proxy === 'function') {
-    refs = new Proxy({}, {
-      get: function (obj, key) {
-        return react.get(key);
-      }
-    });
-    // 注册引用实例的代理，占用refs别名
-    sun.refs = refs;
-  }
+  // 添加对实例池的引用
+  sun.refs = pool;
+  // 添加对监听者的引用
+  sun.listener = b[aliass];
 }(sun);
 //--------注册全局--------------------- 
 module.exports = sun;
