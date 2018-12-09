@@ -55,7 +55,7 @@ require('./listen');
   // 内存环境全局键
   var globalKey = "__reacte__";
   // 记录类name的键值，用于调试
-  var namePropKey = "__name__";
+  var namePropKey = "displayName";
   // 初始化方法的键值
   var initEventKey = c('__init__',17);
   // 释放资源方法的键值
@@ -116,6 +116,11 @@ require('./listen');
   };
   //配置属性中传递过来的方法
   var clearM = function (that, props) {
+    if (that[inited] && that.props === props) {
+      // 初始化过程中复制属性
+      // 初始化完成后发生属性变更时触发属性赋值，其余不处理
+      return;
+    }
     var thatObj = {
       state: {}
     };
@@ -131,11 +136,11 @@ require('./listen');
           thatObj[key] = props[key];
         }
       } else if (key in that.state) {
-        //如果是在state中存在的量
+        //props和state最好不要有重名属性，例如state中有value，props中最好是defaultValue
         thatObj.state[key] = props[key];
       }
     }
-    //合并属性到实例,如果既不在实例中声明，也没有在state中声明，那就留在props里面好了
+    //合并属性到实例,如果既不在实例中声明，也没有在state中声明，那就留在props里不处理
     sun.mix([1], that, thatObj);
   };
 
@@ -145,18 +150,18 @@ require('./listen');
         //初次加载完成后设置可以操作标记
         this[done] = 1;
       },
-      shouldComponentUpdate: function (nextProps, nextState, parentContext) {
+      shouldComponentUpdate: function (nextProps, nextState) {
         //屏蔽外部调用
         this[done] = 0;
         //复制最新属性到实例
         clearM(this, nextProps);
         return true;
       },
-      forceUpdate: function () {
+      forceUpdate: function (callback) {
         // 屏蔽外部调用
         this[done] = 0;
       },
-      componentDidUpdate: function (prevProps, prevState, prevContext) {
+      componentDidUpdate: function (prevProps, prevState) {
         //完成控件更新后允许进行外部方法操作
         this[done] = 1;
       },
@@ -186,7 +191,7 @@ require('./listen');
       }
     }
   };
-  // 装饰器函数
+  // 装饰器函数 HOC
   react.deco = function (target) {
     var newTarget;
     newTarget = function () {
@@ -207,7 +212,7 @@ require('./listen');
     if (!newTarget.__orgMethod) {
       // 备份原来的constructor
       newTarget.__orgMethod = target;
-      newTarget[namePropKey] = target.name;
+      newTarget[namePropKey] = target.displayName || target.name;
     }
     return newTarget;
   };
@@ -277,13 +282,14 @@ require('./listen');
     that.id = that.id || props.id || (seeds());
     //标记禁止外部函数操作
     that[done] = 0;
-    that[namePropKey] = that.constructor.name;
+    that[namePropKey] = that.constructor.displayName || that.constructor.name;
     //注册方法
     for (var key in def) {
       _init(that, key, def);
     }
     // 注册事件监听
     b[aliass].fire(initEventKey, that);
+    // 必须保证在初始化的最后设定
     that[inited] = 1;
   };
   // 防止某些组件正处于不可修改状态的时候被调用方法

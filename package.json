@@ -1,7 +1,7 @@
 {
   "name": "react.eval",
-  "version": "1.4.15",
-  "description": "React 组件间通讯",
+  "version": "1.4.17",
+  "description": "React 组件间通讯(调用指定id的react组件实例)",
   "main": "./react.js",
   "scripts": {
     "test": ""
