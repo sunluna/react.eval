@@ -1,8 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body>
+
 # 关于 id
 
-引用组件时，推荐  &lt;Toast id="toast" /&gt; , 即使用 属性id 。
+引用组件时，推荐  `<Toast id="toast" />` , 即使用 属性id 。
 
-如果确定全局只有一个该组件，可以在实例中直接指定id，调用时可以省略id    **&lt;Toast /&gt;**
+如果确定全局只有一个该组件，可以在实例中直接指定id，调用时可以省略id    `<Toast />`
 
 ```
 import React from 'react';
@@ -34,5 +38,8 @@ class Toast extends React.Component {
 export default Toast;
 ```
 
+
+</body>
+</html>
 
 

@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html>
+<body>
+
 # 调用已知id的组件方法
 
 ## 1、推荐做法 （使用refs引用实例id）
@@ -51,4 +55,6 @@ ref('toast.show',参数1,参数2,参数3);
 ```
 
 
+</body>
+</html>
 

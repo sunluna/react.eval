@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html>
+<body>
+
 # 关于 decorators
 
 本组件推荐 安装  babel-plugin-transform-decorators-legacy
@@ -64,4 +68,5 @@ export default ref(Toast);
 ```
 
 
-
+</body>
+</html>

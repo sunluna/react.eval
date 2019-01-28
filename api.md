@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html>
+<body>
+
 # 1、refs对象
 
 import { refs } from 'react.eval';
@@ -6,9 +10,7 @@ import { refs } from 'react.eval';
 
 `refs.toast.show();`
 
-请确保调用时组件实例已存在并且id匹配
-
-&lt;Toast id='toast'/&gt;
+请确保调用时组件实例已存在并且id匹配 `<Toast id='toast'/>`
 
 注: refs对象并不存在于全局对象上，而是分散在各处引用的闭包内部，通过发布订阅模式维持refs对象为最新的实例id引用集合。
 
@@ -20,11 +22,11 @@ import { ref } from 'react.eval';
 
 | 方法 | 参数（序号，类型，说明） | 描述 |
 | :--- | :--- | :--- |
-| ref\('id'\) | ①  String  实例的id | 等同于 ref.get\('id'\),                                用于获取指定id的react组件实例 |
-| ref\('id.methodName'\) | ① String 实例id  .  方法名                      ② ③......方法其他参数 | 等同于  ref.eval\('id.methodName'\);         用于执行实例中的方法,                            返回值为Promise |
+| ref\('id'\) | ①  String  实例的id | 等同于 ref.get\('id'\), <br/> 用于获取指定id的react组件实例 |
+| ref\('id.methodName'\) | ① String 实例id  .  方法名<br/> ② ③......方法其他参数 | 等同于  ref.eval\('id.methodName'\);<br/>用于执行实例中的方法,<br/> 返回值为Promise |
 | ref\(this\) | ① Object  组件实例 | 等同于  ref.init\(this\) ,                                用于在constructor中注册组件实例到   refs引用 |
-| ref\(Toast\) | ① Function React组件（有状态组件） | 等同于 ref.deco\(Toast\),                          HOC 用于装饰普通React组件,              使组件在实例化时可以被注册到refs对象上，在销毁时可以从refs对象上移除 |
-| ref.chunk\(newBase\) | ① Object \| undefined                            事件池存放的新变量位置 | 迁移公共事件池位置到某个隐藏变量,       一般不用调用此方法,                               此方法仅针对某些有代码洁癖的人。      调用后，可将公共事件池从全局移除。 |
+| ref\(Toast\) | ① Function <br/>React组件（有状态组件） | 等同于 ref.deco\(Toast\),<br/>HOC 用于装饰普通React组件, <br/>使组件在实例化时可以被注册到refs对象上，<br/>在销毁时可以从refs对象上移除 |
+| ref.chunk\(newBase\) | ① Object \| undefined<br/>事件池存放的新变量位置 | 迁移公共事件池位置到某个隐藏变量,<br/>一般不用调用此方法, <br/> 此方法仅针对某些有代码洁癖的人。<br/> 调用后，可将公共事件池从全局移除。 |
 
 **需要注意的地方**
 
@@ -185,9 +187,9 @@ import { listener } from 'react.eval';
 
 | 方法名 | 参数 | 描述 |
 | :--- | :--- | :--- |
-| listener.on | ① String,事件key；                               ②Function 事件方法 | 注册事件方法                                               listener.on\('init',\(\)=&gt;{console.log\(1\)}\) |
-| listener.remove;别名listener.off | ① String,事件key； | 删除指定键值的事件下的所有方法            listener.remove\('init'\) |
-| listener.fire,别名 listener.emit | ① String，事件key；②③④...方法参数 | 执行指定键值的事件                                  listener.fire\('init',参数1,参数2...\); |
+| listener.on | ① String,事件key<br/> ②Function 事件方法 | 注册事件方法<br/>listener.on\('init',\(\)=&gt;{console.log\(1\)}\) |
+| listener.remove;<br/>别名listener.off | ① String,事件key； | 删除指定键值的事件下的所有方法<br/>            listener.remove\('init'\) |
+| listener.fire<br/>别名 listener.emit | ① String，事件key<br/>②③④...方法参数 | 执行指定键值的事件<br/>                                  listener.fire\('init',参数1,参数2...\); |
 | listener.one | 同listener.on | 注册事件，注册之前先清空同键值的其他事件 |
 | listener.once | 同listener.on | 注册事件,被注册的方法执行一次以后就会从该键值的事件列表中移除 |
 
@@ -199,3 +201,5 @@ import { listener } from 'react.eval';
 
 3、listener.fire 内部使用了try catch处理，有错误不会被抛出，而是直接忽略掉，然后执行事件列表的下一个方法。设计如此。
 
+</body>
+</html>

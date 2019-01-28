@@ -1,10 +1,16 @@
+<!DOCTYPE html>
+<html>
+<body>
+
 # react.eval
 
 ## React 组件间通信\(调用指定id的react组件实例\)
 
-#### 我们都知道 document.getElementById\('app'\) 可以用来获得 id 为 app 的dom元素 &lt;div id="app"&gt;&lt;/div&gt;
+#### 我们都知道 document.getElementById\('app'\) 可以用来获得 id 为 app 的dom元素<br/> 
+`<div id="app"></div>`
 
-#### 在react环境下，本组件提供获得指定id的react组件实例功能  &lt;Toast id="toast" /&gt;
+#### 在react环境下，本组件提供获得指定id的react组件实例功能 `refs.toast`
+ `<Toast id="toast" />`;
 
 #### 使用本组件需要安装  babel-plugin-transform-decorators-legacy
 
@@ -31,7 +37,7 @@ module:{
 
 #### 快速开始：
 
-1、注册组件\([init.md](/init.md "更多")\)
+1、注册组件\([相关](/init.md)\)
 
 ```
 import React from 'react';
@@ -60,7 +66,7 @@ class Toast extends React.Component {
 export default Toast;
 ```
 
-2、引用组件\([ref.md](/ref.md "更多")\)
+2、引用组件\([相关](/ref.md)\)
 
 ```
 ...
@@ -69,7 +75,7 @@ export default Toast;
 ...
 ```
 
-3、任意位置调用组件实例\([refs.md](/refs.md "更多方式")\)
+3、任意位置调用组件实例\([更多方式](/refs.md)\)
 
 ```
 import { refs } from 'react.eval';
@@ -87,5 +93,6 @@ import { refs } from 'react.eval';
 
 # 也可以查看 [原理](/yuan-li.md)
 
-
+</body>
+</html>
 
